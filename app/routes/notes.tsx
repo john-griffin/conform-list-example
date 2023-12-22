@@ -1,5 +1,5 @@
 import { ActionFunctionArgs, json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useActionData, useLoaderData } from "@remix-run/react";
 import { db } from "~/db/db";
 import { notes as notesTable } from "~/db/schema";
 import { z } from "zod";
@@ -15,7 +15,13 @@ import { getFieldsetConstraint, parse } from "@conform-to/zod";
 import { eq } from "drizzle-orm";
 
 import { Input } from "../components/input";
-import { Field, FieldGroup, Label, Fieldset } from "../components/fieldset";
+import {
+  Field,
+  FieldGroup,
+  Label,
+  Fieldset,
+  ErrorMessage,
+} from "../components/fieldset";
 import { Strong } from "../components/text";
 import { Button } from "../components/button";
 
@@ -51,8 +57,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function Notes() {
   const loaderData = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
+
   const [form, fields] = useForm({
     defaultValue: { notes: loaderData.notes },
+    lastSubmission: actionData?.submission,
     constraint: getFieldsetConstraint(notesSchema),
   });
   const notesList = useFieldList(form.ref, fields.notes);
@@ -85,8 +94,12 @@ function Note({ config }: { config: FieldConfig<z.infer<typeof noteSchema>> }) {
           <input {...conform.input(fields.id)} type="hidden" />
           <FieldGroup>
             <Field>
-              <Label>Content</Label>
-              <Input {...conform.input(fields.content)} />
+              <Label>Note {fields.id.defaultValue} Content</Label>
+              <Input
+                {...conform.input(fields.content)}
+                invalid={fields.content.errors !== undefined}
+              />
+              <ErrorMessage>{fields.content.errors}</ErrorMessage>
             </Field>
           </FieldGroup>
         </Fieldset>
