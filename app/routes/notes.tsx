@@ -14,6 +14,11 @@ import { useRef } from "react";
 import { getFieldsetConstraint, parse } from "@conform-to/zod";
 import { eq } from "drizzle-orm";
 
+import { Input } from "../components/input";
+import { Field, FieldGroup, Label, Fieldset } from "../components/fieldset";
+import { Strong } from "../components/text";
+import { Button } from "../components/button";
+
 const noteSchema = z.object({
   id: z.number(),
   content: z.string(),
@@ -31,6 +36,7 @@ export async function loader() {
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const submission = parse(formData, { schema: notesSchema });
+
   if (!submission.value) {
     return json({ status: "error", submission } as const, { status: 400 });
   }
@@ -52,16 +58,18 @@ export default function Notes() {
   const notesList = useFieldList(form.ref, fields.notes);
 
   return (
-    <div>
-      <div>Notes</div>
-      <form method="post" {...form.props}>
-        <ul>
-          {notesList.map((noteFieldConfig) => (
-            <Note config={noteFieldConfig} key={noteFieldConfig.key} />
-          ))}
-        </ul>
-        <button type="submit">Save</button>
-      </form>
+    <div className="flex items-start justify-center px-6 py-12">
+      <div className="w-full max-w-sm">
+        <Strong>Notes</Strong>
+        <form method="post" {...form.props} className="space-y-8">
+          <ul>
+            {notesList.map((noteFieldConfig) => (
+              <Note config={noteFieldConfig} key={noteFieldConfig.key} />
+            ))}
+          </ul>
+          <Button type="submit">Save</Button>
+        </form>
+      </div>
     </div>
   );
 }
@@ -73,8 +81,15 @@ function Note({ config }: { config: FieldConfig<z.infer<typeof noteSchema>> }) {
   return (
     <li>
       <fieldset ref={ref} {...conform.fieldset(config)}>
-        <input {...conform.input(fields.id)} type="hidden" />
-        <input {...conform.input(fields.content)} />
+        <Fieldset>
+          <input {...conform.input(fields.id)} type="hidden" />
+          <FieldGroup>
+            <Field>
+              <Label>Content</Label>
+              <Input {...conform.input(fields.content)} />
+            </Field>
+          </FieldGroup>
+        </Fieldset>
       </fieldset>
     </li>
   );
